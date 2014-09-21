@@ -1,0 +1,61 @@
+# Practical Machine Learning: Peer Assessment 1
+
+## Loading and preprocessing the data
+```{r echo=TRUE}
+## download training file if not available  
+trainingFileUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+trainingDestfilename <- "pml-training.csv"
+if ( !file.exists( trainingDestfilename ) ) {  
+        download.file(trainingFileUrl, trainingDestfilename, method="curl")
+        dateDownloaded <- Sys.Date()
+} 
+
+## loading dataset
+training <- read.csv(trainingDestfilename, header=TRUE) 
+
+## preprocessing dataset
+
+## select the columns to work with
+myrows <- c("roll_belt", "pitch_belt", "yaw_belt",
+            "roll_arm", "pitch_arm", "yaw_arm",
+            "roll_dumbbell","pitch_dumbbell","yaw_dumbbell", 
+            "classe")
+
+training <- training[,myrows]
+```
+
+## Loading libraries
+```{r echo=TRUE, results='hide'}
+library(caret)
+```
+
+## Cross-validation: divide training set to in sample and out of sample
+```{r echo=TRUE}
+inTrain <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
+mytraining <- training[inTrain, ] ## in sample
+mytesting <- training[-inTrain, ] ## out of sample
+```
+
+## Apply boosting with trees method "gmb"
+```{r echo=TRUE, results='hide'}
+modFit <- train(classe ~ ., method="gbm", data=mytraining)
+```
+
+## Explain the results
+```{r echo=TRUE}
+modFit$finalModel
+modFit
+confusionMatrix(predict(modFit, mytraining), mytraining$classe)
+```
+The **in sample accuracy** is **`r confusionMatrix(predict(modFit, mytraining), mytraining$classe)$overall["Accuracy"]`**. I expect **out of sample accuracy** to be less than that, but more then 0.7 that I would consider a fairly good prediction.
+
+## Have a final look at the out of sample prediction
+```{r echo=TRUE}
+confusionMatrix(predict(modFit, mytesting), mytesting$classe)
+```
+
+## Results 
+The **out of sample accuracy** is **`r confusionMatrix(predict(modFit, mytesting), mytesting$classe)$overall["Accuracy"]`** which is fairly good and fits my target criteria.
+
+
+
